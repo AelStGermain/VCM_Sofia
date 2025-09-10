@@ -2,7 +2,7 @@
     <x-auth-card>
         <x-slot name="logo">
             {{-- Logo personalizado --}}
-            <img src="{{ asset('images/logo.png') }}" alt="Logo Nexus" class="w-20 h-20">
+<img src="{{ asset('images/logo.png') }}" alt="Logo Nexus" class="max-w-[200px] max-h-[200px]">
         </x-slot>
 
         <!-- Mensaje de estado -->

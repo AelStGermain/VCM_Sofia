@@ -38,28 +38,26 @@ class ProjectController extends Controller
 
         // Filtrado por rol
         if ($user->esDocente()) {
-            // Docente ve proyectos asignados o de su área
-            $query->where('docente_id', $user->id)->orWhere('area_academica_id', $user->area_academica_id);
-            $view = 'proyectos.docente.index';
+            // Redirigir al dashboard del docente
+            return redirect()->route('dashboard.docente');
         } elseif ($user->esEstudiante()) {
             // Estudiante ve solo proyectos donde participa
             $query->whereHas('equipoEstudiantes', function ($q) use ($user) {
                 $q->where('estudiante_id', $user->id);
             });
-            $view = 'proyectos.estudiante.index';
-        } else {
-            abort(403, 'Rol no autorizado');
+
+            $projects = $query->get();
+
+            // Estadísticas
+            $total = $projects->count();
+            $activos = $projects->where('estado_id', 1)->count();
+            $planificacion = $projects->where('estado_id', 3)->count();
+            $completados = $projects->where('estado_id', 2)->count();
+
+            return view('proyectos.estudiante.index', compact('projects', 'total', 'activos', 'planificacion', 'completados'));
         }
 
-        $projects = $query->get();
-
-        // Estadísticas
-        $total = $projects->count();
-        $activos = $projects->where('estado_id', 1)->count();
-        $planificacion = $projects->where('estado_id', 3)->count();
-        $completados = $projects->where('estado_id', 2)->count();
-
-        return view($view, compact('projects', 'total', 'activos', 'planificacion', 'completados'));
+        abort(403, 'Rol no autorizado');
     }
 
     public function create()
@@ -101,7 +99,6 @@ class ProjectController extends Controller
         if ($user->esDocente()) {
             return view('proyectos.docente.show', compact('project'));
         } elseif ($user->esEstudiante()) {
-            // Verifica si el estudiante pertenece al equipo
             $pertenece = $project->equipoEstudiantes()->where('estudiante_id', $user->id)->exists();
             if (!$pertenece) {
                 abort(403, 'No autorizado');

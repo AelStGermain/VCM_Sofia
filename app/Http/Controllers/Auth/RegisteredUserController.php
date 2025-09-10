@@ -28,7 +28,7 @@ class RegisteredUserController extends Controller
         ]);
 
         // 2. Buscar el rol por nombre
-        $role = Role::where('name', $validated['role'])->first();
+        $role = Role::where('nombre', $validated['role'])->first();
 
         if (!$role) {
             return back()->withErrors(['role' => 'El rol seleccionado no es válido.'])->withInput();

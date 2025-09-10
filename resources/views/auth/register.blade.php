@@ -1,7 +1,8 @@
 <x-guest-layout>
     <x-auth-card>
         <x-slot name="logo">
-            <x-application-logo class="w-20 h-20 fill-current text-gray-500" />
+            {{-- Logo personalizado --}}
+<img src="{{ asset('images/logo.png') }}" alt="Logo Nexus" class="max-w-[200px] max-h-[200px]">
         </x-slot>
 
         <form method="POST" action="{{ route('register') }}">

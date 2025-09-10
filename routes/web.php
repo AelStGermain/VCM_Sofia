@@ -4,18 +4,35 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ChatGPTController;
 use App\Http\Controllers\TareaController;
-
+use App\Http\Controllers\UsuarioController;
 
 // Ruta principal - Página de bienvenida
 Route::get('/', function () {
     return view('welcome');
 });
 
-// Rutas para proyectos
+// Rutas de autenticación (Breeze)
+require __DIR__.'/auth.php';
+
+// Redirección general post-login (fallback)
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
+
+// Dashboards diferenciados por rol
+Route::get('/dashboard/docente', function () {
+    return view('dashboard.docente');
+})->middleware(['auth', 'verified'])->name('dashboard.docente');
+
+Route::get('/dashboard/estudiante', function () {
+    return view('dashboard.estudiante');
+})->middleware(['auth', 'verified'])->name('dashboard.estudiante');
+
+// Rutas para proyectos (CRUD completo protegido)
 Route::resource('proyectos', ProjectController::class)->middleware('auth');
 
-// Rutas para proyectos
-Route::resource('proyectos', ProjectController::class)->middleware('auth');
+// Rutas adicionales para proyectos (acceso diferenciado por rol)
+Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index')->middleware('auth');
 
 // Rutas para tareas
 Route::middleware('auth')->group(function () {
@@ -26,62 +43,29 @@ Route::middleware('auth')->group(function () {
 });
 
 // Rutas para actores de interés
-Route::get('/actores', function () {
-    return view('actores.index');
-})->middleware('auth')->name('actores.index');
-
-Route::get('/actores/crear', function () {
-    return view('actores.create');
-})->middleware('auth');
-
-Route::get('/actores/{id}', function ($id) {
-    return view('actores.show', ['id' => $id]);
-})->middleware('auth');
-
-Route::get('/actores/{id}/editar', function ($id) {
-    return view('actores.edit', ['id' => $id]);
-})->middleware('auth');
-
-// POST para procesar formularios de actores
-Route::post('/actores', function () {
-    return redirect('/actores')->with('success', 'Actor creado exitosamente');
-})->middleware('auth');
-
-Route::put('/actores/{id}', function ($id) {
-    return redirect('/actores')->with('success', 'Actor actualizado exitosamente');
-})->middleware('auth');
-
-// Rutas para reportes
-Route::get('/reportes', function () {
-    return view('reportes.index');
-})->middleware('auth')->name('reportes.index');
-
-Route::get('/reportes/generar', function () {
-    return view('reportes.generar');
-})->middleware('auth');
-
-// Rutas para usuarios
-Route::resource('usuarios', App\Http\Controllers\UsuarioController::class)->middleware('auth');
-
-// Ruta de redirección temporal para menú 
-Route::get('/institutos', function () {
-    return redirect('/actores');
+Route::middleware('auth')->group(function () {
+    Route::get('/actores', fn() => view('actores.index'))->name('actores.index');
+    Route::get('/actores/crear', fn() => view('actores.create'));
+    Route::get('/actores/{id}', fn($id) => view('actores.show', ['id' => $id]));
+    Route::get('/actores/{id}/editar', fn($id) => view('actores.edit', ['id' => $id]));
+    Route::post('/actores', fn() => redirect('/actores')->with('success', 'Actor creado exitosamente'));
+    Route::put('/actores/{id}', fn($id) => redirect('/actores')->with('success', 'Actor actualizado exitosamente'));
 });
 
+// Rutas para reportes
+Route::middleware('auth')->group(function () {
+    Route::get('/reportes', fn() => view('reportes.index'))->name('reportes.index');
+    Route::get('/reportes/generar', fn() => view('reportes.generar'));
+});
+
+// Rutas para usuarios
+Route::resource('usuarios', UsuarioController::class)->middleware('auth');
+
+// Ruta de redirección temporal para menú
+Route::get('/institutos', fn() => redirect('/actores'));
+
 // Vista del asistente
-Route::get('/chatgpt', function () {
-    return view('components.chatgpt');
-})->name('chatgpt.view')->middleware('auth');
+Route::get('/chatgpt', fn() => view('components.chatgpt'))->name('chatgpt.view')->middleware('auth');
 
 // API para la petición a ChatGPT
 Route::post('/chatgpt/ask', [ChatGPTController::class, 'askChatGPT'])->name('chatgpt.ask')->middleware('auth');
-
-// Rutas adicionales para proyectos
-Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index')->middleware('auth');
-
-// Importar rutas de Breeze (login, registro, verificación, etc.)
-require __DIR__.'/auth.php';
-
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
